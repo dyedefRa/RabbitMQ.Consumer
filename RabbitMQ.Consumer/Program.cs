@@ -15,7 +15,7 @@ using IChannel channel = await connection.CreateChannelAsync();
 
 //Queue Oluşturma
 var queueName = "example-queue";
-await channel.QueueDeclareAsync(queue: queueName, exclusive: false);
+await channel.QueueDeclareAsync(queue: queueName, exclusive: false, durable: true);
 //Consumerdaki kuyruk publisherdaki gibi birebir aynı yapılandırılmalıdır.
 
 Console.WriteLine("📩 Mesajlar dinleniyor... Çıkmak için CTRL+C bas.");
@@ -24,17 +24,17 @@ Console.WriteLine("📩 Mesajlar dinleniyor... Çıkmak için CTRL+C bas.");
 //Kuyruktan mesajı okuma.
 AsyncEventingBasicConsumer consumer = new(channel);
 await channel.BasicConsumeAsync(queue: queueName, false, consumer: consumer);
-consumer.ReceivedAsync += async (@sender, ea) =>
+consumer.ReceivedAsync += async (@sender, e) =>
 {
     //Kuyruğa gelen mesajın işlendiği yerdir!
     //e.Body : Kuyruktaki mesajın verisini bütünsel olarak getirir.
     //e.Body.Span veya e.Body.ToArray() = byte verisini getirir.
-    var body = ea.Body.ToArray();
+    var body = e.Body.ToArray();
     var message = Encoding.UTF8.GetString(body);
     Console.WriteLine(message);
 
     //// İsteğe bağlı: Mesaj işlendi bilgisini RabbitMQ'ya bildir
-    //await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+    await channel.BasicAckAsync(e.DeliveryTag, multiple: false);
 };
 
 Console.Read();
